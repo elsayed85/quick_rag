@@ -90,11 +90,28 @@ This script will:
 
 ### 7. Run the RAG System
 
+You have two options to use the RAG system:
+
+#### Option A: Interactive CLI
+
 Start the interactive question-answering system:
 
 ```bash
 python rag.py
 ```
+
+#### Option B: REST API
+
+Start the FastAPI server:
+
+```bash
+uvicorn api:app --reload
+```
+
+The API will be available at:
+- **API Endpoint**: http://localhost:8000
+- **Interactive Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
 
 ## 💡 How It Works
 
@@ -157,7 +174,7 @@ The agent uses a sophisticated workflow powered by LangGraph:
 
 ## 🎯 Usage Examples
 
-### Interactive Mode
+### Interactive CLI Mode
 
 ```bash
 python rag.py
@@ -172,20 +189,153 @@ You: What are the benefits of microservices?
 
 Type `quit`, `exit`, or `q` to stop.
 
+### REST API Mode
+
+Start the API server:
+
+```bash
+uvicorn api:app --reload
+```
+
+**Example API Request:**
+
+```bash
+curl -X POST "http://localhost:8000/api/ask" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What is distributed systems?",
+    "include_sources": true
+  }'
+```
+
+**Example Response:**
+
+```json
+{
+  "question": "What is distributed systems?",
+  "answer": "A distributed system is a collection of independent computers that appears to its users as a single coherent system. These computers communicate and coordinate their actions by passing messages over a network...",
+  "sources": [
+    {
+      "source_file": "intro_to_distributed_systems.pdf",
+      "page": 5,
+      "content_preview": "Distributed systems are computing environments where multiple..."
+    }
+  ]
+}
+```
+
+**Using Python:**
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/ask",
+    json={
+        "question": "Explain the CAP theorem",
+        "include_sources": True
+    }
+)
+
+data = response.json()
+print(f"Answer: {data['answer']}")
+```
+
+**Using JavaScript:**
+
+```javascript
+fetch('http://localhost:8000/api/ask', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    question: 'What are microservices?',
+    include_sources: true
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data.answer));
+```
+
 ## 🛠️ Project Structure
 
 ```
 books_rag/
 ├── books/                          # PDF documents directory
 │   └── intro_to_distributed_systems.pdf
+├── api.py                          # FastAPI REST API server
 ├── docker-compose.yml              # Qdrant container configuration
 ├── generate_embeddings.py          # Embedding generation script
 ├── generate_pdf.py                 # PDF generation utility
-├── rag.py                          # RAG agent implementation
+├── rag.py                          # Interactive CLI RAG agent
 ├── requirements.txt                # Python dependencies
 ├── .env.example                    # Environment variables template
 ├── .gitignore                      # Git ignore rules
 └── README.md                       # This file
+```
+
+## 📡 API Reference
+
+### Endpoints
+
+#### `GET /`
+Get API information and available endpoints.
+
+**Response:**
+```json
+{
+  "name": "Books RAG API",
+  "version": "1.0.0",
+  "description": "API for answering questions using RAG over PDF documents",
+  "endpoints": {
+    "POST /api/ask": "Ask a question",
+    "GET /health": "Health check"
+  }
+}
+```
+
+#### `GET /health`
+Check the health of the API and Qdrant connection.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "qdrant_connected": true,
+  "collection_exists": true,
+  "documents_count": 42
+}
+```
+
+#### `POST /api/ask`
+Ask a question and receive an AI-generated answer.
+
+**Request Body:**
+```json
+{
+  "question": "What is a distributed system?",
+  "include_sources": true
+}
+```
+
+**Parameters:**
+- `question` (string, required): The question to ask
+- `include_sources` (boolean, optional): Whether to include source documents (default: false)
+
+**Response:**
+```json
+{
+  "question": "What is a distributed system?",
+  "answer": "A distributed system is...",
+  "sources": [
+    {
+      "source_file": "intro_to_distributed_systems.pdf",
+      "page": 5,
+      "content_preview": "Distributed systems are..."
+    }
+  ]
+}
 ```
 
 ## 🔧 Configuration
@@ -217,6 +367,8 @@ COLLECTION_NAME = "school_books"  # Qdrant collection name
 - **qdrant-client** - Qdrant Python client
 - **pypdf** - PDF processing
 - **python-dotenv** - Environment management
+- **fastapi** - REST API framework
+- **uvicorn** - ASGI server
 
 ## 🔍 Troubleshooting
 
